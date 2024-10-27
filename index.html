@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>B&B</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body {
@@ -97,7 +97,15 @@ function createScene(){
 	addLight();
 	addExplosion();
 	
-	camera.position.z = 6.5;
+	if (window.innerWidth < 768) {
+    // Mobile screen
+	// window.location.reload();
+    camera.position.z = 8.5;
+  } else {
+    // Desktop screen
+	// window.location.reload();
+    camera.position.z = 6.5;
+  }
 	camera.position.y = 2.5;
 	/*orbitControl = new THREE.OrbitControls( camera, renderer.domElement );//helper to rotate around in scene
 	orbitControl.addEventListener( 'change', render );
@@ -111,7 +119,59 @@ function createScene(){
 	*/
 	window.addEventListener('resize', onWindowResize, false);//resize callback
 
+	// Add touch event listeners for swiping
+	dom.addEventListener('touchstart', handleTouchStart, false);
+            dom.addEventListener('touchmove', handleTouchMove, false);
+
+            // Variables to store the touch start and end positions
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            // Touch start event
+            function handleTouchStart(event) {
+                touchStartX = event.changedTouches[0].screenX;
+            }
+
+            // Touch move event
+            function handleTouchMove(event) {
+                touchEndX = event.changedTouches[0].screenX;
+                handleSwipe();
+            }
+
+            // Function to handle swipe direction
+            function handleSwipe() {
+                const swipeDistance = touchEndX - touchStartX;
+                const minSwipeDistance = 50; // Minimum distance to consider it a swipe
+
+                if (Math.abs(swipeDistance) > minSwipeDistance) {
+                    if (swipeDistance < 0) {
+                        moveLeft();
+                    } else {
+                        moveRight();
+                    }
+                }
+            }
 	document.onkeydown = handleKeyDown;
+
+	function moveLeft() {
+            if (currentLane === middleLane) {
+                currentLane = leftLane;
+            } else if (currentLane === rightLane) {
+                currentLane = middleLane;
+            }
+            jumping = true;
+            bounceValue = 0.06;
+        }
+
+        function moveRight() {
+            if (currentLane === middleLane) {
+                currentLane = rightLane;
+            } else if (currentLane === leftLane) {
+                currentLane = middleLane;
+            }
+            jumping = true;
+            bounceValue = 0.06;
+        }
 	
 	scoreText = document.createElement('div');
 	scoreText.style.position = 'absolute';
@@ -366,7 +426,7 @@ function createTree() {
   // Create ConeGeometry (BufferGeometry is now used)
   var treeGeometry = new THREE.ConeGeometry(0.5, 1, sides, tiers);
   var treeMaterial = new THREE.MeshStandardMaterial({
-    color: 0x33ff33,
+    color: 0x228B22,
     flatShading: true
   });
 
