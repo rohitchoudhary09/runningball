@@ -1,113 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&B</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+    <title>B&B Runner</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body {
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        font-family: "Urbanist", sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      }
+
+      #TutContainer {
+        width: 100%;
+        height: 100%;
+      }
+
+      .game-overlay {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        z-index: 1000;
+      }
+
+      .info-card {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 12px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .logo {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 20px;
+        background: #333;
+        border-radius: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2em;
+        color: white;
+        font-weight: bold;
+      }
+
+      .modal h2 {
+        margin: 20px 0;
+        color: #333;
+        font-size: 1.8em;
+      }
+
+      .score-display {
+        font-size: 2.5em;
+        color: #2c3e50;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+
+      .btn {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 1.2em;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-family: "Urbanist", sans-serif;
+        font-weight: 600;
+        margin-top: 20px;
+      }
+
+      .btn:hover {
+        background: #45a049;
+        transform: translateY(-2px);
+      }
+
+      .modal p {
+        color: #666;
+        margin: 15px 0;
+        line-height: 1.5;
+      }
+
+      .controls-info {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        text-align: left;
+      }
+
+      .controls-info p {
+        margin: 5px 0;
+        color: #555;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="TutContainer"></div>
+    <div class="game-overlay">
+      <div class="info-card">Score: <span id="scoreText">0</span></div>
+      <!-- <div class="info-card">Avoid obstacles, Score 100+ for 10% discount</div> -->
+      <!-- <div class="info-card">↑ Jump | ← → Move</div> -->
+    </div>
 
     <script>
-        
-var sceneWidth;
-var sceneHeight;
-var camera;
-var scene;
-var renderer;
-var dom;
-var sun;
-var ground;
-//var orbitControl;
-var rollingGroundSphere;
-var heroSphere;
-var rollingSpeed=0.008;
-var heroRollingSpeed;
-var worldRadius=26;
-var heroRadius=0.2;
-var sphericalHelper;
-var pathAngleValues;
-var heroBaseY=1.8;
-var bounceValue=0.1;
-var gravity=0.005;
-var leftLane=-1;
-var rightLane=1;
-var middleLane=0;
-var currentLane;
-var clock;
-var jumping;
-var treeReleaseInterval=0.5;
-var lastTreeReleaseTime=0;
-var treesInPath;
-var treesPool = [];
-var particleGeometry;
-var particleCount=20;
-var explosionPower =1.06;
-var particles;
-//var stats;
-var scoreText;
-var score;
-var hasCollided;
+      var sceneWidth;
+      var sceneHeight;
+      var camera;
+      var scene;
+      var renderer;
+      var dom;
+      var sun;
+      var ground;
+      //var orbitControl;
+      var rollingGroundSphere;
+      var heroSphere;
+      var rollingSpeed = 0.008;
+      var heroRollingSpeed;
+      var worldRadius = 26;
+      var heroRadius = 0.2;
+      var sphericalHelper;
+      var pathAngleValues;
+      var heroBaseY = 1.8;
+      var bounceValue = 0.1;
+      var gravity = 0.005;
+      var leftLane = -1;
+      var rightLane = 1;
+      var middleLane = 0;
+      var currentLane;
+      var clock;
+      var jumping;
+      var treeReleaseInterval = 0.5;
+      var lastTreeReleaseTime = 0;
+      var treesInPath;
+      var treesPool = [];
+      var particleGeometry;
+      var particleCount = 20;
+      var explosionPower = 1.06;
+      var particles;
+      //var stats;
+      var globalRenderID;
+      var gameActive = false;
+      var scoreText;
+      var score;
+      var hasCollided;
 
-init();
+      // init();
 
-function init() {
-	// set up the scene
-	createScene();
+      function init() {
+        createScene();
+        update();
+      }
 
-	//call game loop
-	update();
-}
+      function createModals() {
+        // Start Modal
+        startModal = document.createElement("div");
+        startModal.className = "modal-overlay";
+        startModal.innerHTML = `
+                <div class="modal">
+                    <div class="logo">B&B</div>
+                    <h2>Welcome to B&B Runner</h2>
+                    <p>Dodge obstacles and collect points in this exciting runner game!</p>
+                    <div class="controls-info">
+                        <p>↑ or SPACE: Jump</p>
+                        <p>← →: Move left/right</p>
+                        <p>Score 100+ points for a special discount!</p>
+                    </div>
+                    <button class="btn" onclick="startGame()">Start Game</button>
+                </div>
+            `;
+        document.body.appendChild(startModal);
 
-function createScene(){
-	hasCollided=false;
-	score=0;
-	treesInPath=[];
-	treesPool=[];
-	clock=new THREE.Clock();
-	clock.start();
-	heroRollingSpeed=(rollingSpeed*worldRadius/heroRadius)/5;
-	sphericalHelper = new THREE.Spherical();
-	pathAngleValues=[1.52,1.57,1.62];
-    sceneWidth=window.innerWidth;
-    sceneHeight=window.innerHeight;
-    scene = new THREE.Scene();//the 3d scene
-    scene.fog = new THREE.FogExp2( 0xf0fff0, 0.14 );
-    camera = new THREE.PerspectiveCamera( 60, sceneWidth / sceneHeight, 0.1, 1000 );//perspective camera
-    renderer = new THREE.WebGLRenderer({alpha:true});//renderer with transparent backdrop
-    renderer.setClearColor(0xfffafa, 1); 
-    renderer.shadowMap.enabled = true;//enable shadow
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.setSize( sceneWidth, sceneHeight );
-    dom = document.getElementById('TutContainer');
-	dom.appendChild(renderer.domElement);
-	//stats = new Stats();
-	//dom.appendChild(stats.dom);
-	createTreesPool();
-	addWorld();
-	addHero();
-	addLight();
-	addExplosion();
-	
-	if (window.innerWidth < 768) {
-    // Mobile screen
-	// window.location.reload();
-    camera.position.z = 8.5;
-  } else {
-    // Desktop screen
-	// window.location.reload();
-    camera.position.z = 6.5;
-  }
-	camera.position.y = 2.5;
-	/*orbitControl = new THREE.OrbitControls( camera, renderer.domElement );//helper to rotate around in scene
+        // Game Over Modal
+        gameOverModal = document.createElement("div");
+        gameOverModal.className = "modal-overlay";
+        gameOverModal.style.display = "none";
+        gameOverModal.innerHTML = `
+                <div class="modal">
+                    <div class="logo">B&B</div>
+                    <h2>Game Over</h2>
+                    <div class="score-display">Score: <span id="finalScore">0</span></div>
+                    <p id="achievementText"></p>
+                    <button class="btn" onclick="restartGame()">Play Again</button>
+                </div>
+            `;
+        document.body.appendChild(gameOverModal);
+      }
+
+      function startGame() {
+        startModal.style.display = "none";
+        hasCollided = false;
+        score = 0;
+        document.getElementById("scoreText").innerHTML = "0";
+        init();
+      }
+
+      function restartGame() {
+        gameOverModal.style.display = "none";
+        hasCollided = false;
+        score = 0;
+        document.getElementById("scoreText").innerHTML = "0";
+
+        // Reset game elements
+        treesInPath.forEach((tree) => {
+          tree.visible = false;
+          treesPool.push(tree);
+        });
+        treesInPath = [];
+
+        // Reset hero position
+        heroSphere.position.y = heroBaseY;
+        heroSphere.position.x = middleLane;
+        currentLane = middleLane;
+
+        // Reset particles
+        particles.visible = false;
+
+        // Restart clock
+        clock.start();
+
+        // Restart animation
+        update();
+      }
+
+      function createScene() {
+        hasCollided = false;
+        score = 0;
+        treesInPath = [];
+        treesPool = [];
+        clock = new THREE.Clock();
+        clock.start();
+        heroRollingSpeed = (rollingSpeed * worldRadius) / heroRadius / 5;
+        sphericalHelper = new THREE.Spherical();
+        pathAngleValues = [1.52, 1.57, 1.62];
+        sceneWidth = window.innerWidth;
+        sceneHeight = window.innerHeight;
+        scene = new THREE.Scene(); //the 3d scene
+        scene.fog = new THREE.FogExp2(0xf0fff0, 0.14);
+        camera = new THREE.PerspectiveCamera(
+          60,
+          sceneWidth / sceneHeight,
+          0.1,
+          1000
+        ); //perspective camera
+        renderer = new THREE.WebGLRenderer({ alpha: true }); //renderer with transparent backdrop
+        renderer.setClearColor(0xfffafa, 1);
+        renderer.shadowMap.enabled = true; //enable shadow
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setSize(sceneWidth, sceneHeight);
+        dom = document.getElementById("TutContainer");
+        dom.appendChild(renderer.domElement);
+        //stats = new Stats();
+        //dom.appendChild(stats.dom);
+        createTreesPool();
+        addWorld();
+        addHero();
+        addLight();
+        addExplosion();
+
+        if (window.innerWidth < 768) {
+          // Mobile screen
+          // window.location.reload();
+          camera.position.z = 8.5;
+        } else {
+          // Desktop screen
+          // window.location.reload();
+          camera.position.z = 6.5;
+        }
+        camera.position.y = 2.5;
+        /*orbitControl = new THREE.OrbitControls( camera, renderer.domElement );//helper to rotate around in scene
 	orbitControl.addEventListener( 'change', render );
 	orbitControl.noKeys = true;
 	orbitControl.noPan = true;
@@ -117,550 +319,642 @@ function createScene(){
 	orbitControl.minAzimuthAngle = -0.2;
 	orbitControl.maxAzimuthAngle = 0.2;
 	*/
-	window.addEventListener('resize', onWindowResize, false);//resize callback
+        window.addEventListener("resize", onWindowResize, false); //resize callback
 
-	// Add touch event listeners for swiping
-	dom.addEventListener('touchstart', handleTouchStart, false);
-            dom.addEventListener('touchmove', handleTouchMove, false);
+        // Add touch event listeners for swiping
+        dom.addEventListener("touchstart", handleTouchStart, false);
+        dom.addEventListener("touchmove", handleTouchMove, false);
 
-            // Variables to store the touch start and end positions
-            let touchStartX = 0;
-            let touchEndX = 0;
+        // Variables to store the touch start and end positions
+        let touchStartX = 0;
+        let touchEndX = 0;
 
-            // Touch start event
-            function handleTouchStart(event) {
-                touchStartX = event.changedTouches[0].screenX;
+        // Touch start event
+        function handleTouchStart(event) {
+          touchStartX = event.changedTouches[0].screenX;
+        }
+
+        // Touch move event
+        function handleTouchMove(event) {
+          touchEndX = event.changedTouches[0].screenX;
+          handleSwipe();
+        }
+
+        // Function to handle swipe direction
+        function handleSwipe() {
+          const swipeDistance = touchEndX - touchStartX;
+          const minSwipeDistance = 50; // Minimum distance to consider it a swipe
+
+          if (Math.abs(swipeDistance) > minSwipeDistance) {
+            if (swipeDistance < 0) {
+              moveLeft();
+            } else {
+              moveRight();
             }
+          }
+        }
+        document.onkeydown = handleKeyDown;
 
-            // Touch move event
-            function handleTouchMove(event) {
-                touchEndX = event.changedTouches[0].screenX;
-                handleSwipe();
-            }
+        // Update the movement functions for touch controls
+        function moveLeft() {
+          if (heroSphere.position.y > heroBaseY + 0.5) return;
 
-            // Function to handle swipe direction
-            function handleSwipe() {
-                const swipeDistance = touchEndX - touchStartX;
-                const minSwipeDistance = 50; // Minimum distance to consider it a swipe
-
-                if (Math.abs(swipeDistance) > minSwipeDistance) {
-                    if (swipeDistance < 0) {
-                        moveLeft();
-                    } else {
-                        moveRight();
-                    }
-                }
-            }
-	document.onkeydown = handleKeyDown;
-
-// Update the movement functions for touch controls
-function moveLeft() {
-    if(heroSphere.position.y > heroBaseY + 0.5) return;
-    
-    if(currentLane === middleLane) {
-        currentLane = leftLane;
-    } else if(currentLane === rightLane) {
-        currentLane = middleLane;
-    }
-    
-    if(heroSphere.position.y <= heroBaseY + 0.1) {
-        jumping = true;
-        bounceValue = 0.06;
-    }
-}
-
-function moveRight() {
-    if(heroSphere.position.y > heroBaseY + 0.5) return;
-    
-    if(currentLane === middleLane) {
-        currentLane = rightLane;
-    } else if(currentLane === leftLane) {
-        currentLane = middleLane;
-    }
-    
-    if(heroSphere.position.y <= heroBaseY + 0.1) {
-        jumping = true;
-        bounceValue = 0.06;
-    }
-}
-	
-	scoreText = document.createElement('div');
-	scoreText.style.position = 'absolute';
-	//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-	scoreText.style.width = 100;
-	scoreText.style.height = 100;
-	//scoreText.style.backgroundColor = "blue";
-	scoreText.innerHTML = "0";
-	scoreText.style.top = 50 + 'px';
-	scoreText.style.left = 10 + 'px';
-	document.body.appendChild(scoreText);
-  
-  var infoText = document.createElement('div');
-	infoText.style.position = 'absolute';
-	infoText.style.width = 100;
-	infoText.style.height = 100;
-	infoText.style.backgroundColor = "yellow";
-	infoText.innerHTML = "UP - Jump, Left/Right - Move";
-	infoText.style.top = 10 + 'px';
-	infoText.style.left = 10 + 'px';
-	document.body.appendChild(infoText);
-}
-function addExplosion() {
-    // Create a BufferGeometry instead of Geometry
-    var particleGeometry = new THREE.BufferGeometry();
-    
-    // Create an array to hold the positions of the particles
-    var positions = new Float32Array(particleCount * 3); // 3 components (x, y, z) for each vertex
-
-    for (var i = 0; i < particleCount; i++) {
-        var vertex = new THREE.Vector3(
-            (Math.random() - 0.5) * 2,  // Random x position
-            (Math.random() - 0.5) * 2,  // Random y position
-            (Math.random() - 0.5) * 2   // Random z position
-        );
-        
-        // Assign the vertex positions to the positions array
-        positions[i * 3] = vertex.x;     // x
-        positions[i * 3 + 1] = vertex.y; // y
-        positions[i * 3 + 2] = vertex.z; // z
-    }
-
-    // Set the positions as an attribute in the BufferGeometry
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    var pMaterial = new THREE.PointsMaterial({
-        color: 0x00ff00,
-        size: 0.2
-    });
-
-    // Create Points using the BufferGeometry
-    particles = new THREE.Points(particleGeometry, pMaterial);
-    scene.add(particles);
-    particles.visible = false; // Hide the particles initially
-}
-
-function createTreesPool(){
-	var maxTreesInPool=10;
-	var newTree;
-	for(var i=0; i<maxTreesInPool;i++){
-		newTree=createTree();
-		treesPool.push(newTree);
-	}
-}
-function handleKeyDown(keyEvent){
-    // Only allow lane changes if not already jumping too high
-    if(heroSphere.position.y > heroBaseY + 0.5) return;
-    
-    var validMove = true;
-    if(keyEvent.keyCode === 37) {//left
-        if(currentLane == middleLane){
+          if (currentLane === middleLane) {
             currentLane = leftLane;
-        }else if(currentLane == rightLane){
+          } else if (currentLane === rightLane) {
             currentLane = middleLane;
-        }else{
-            validMove = false;    
-        }
-    } else if(keyEvent.keyCode === 39) {//right
-        if(currentLane == middleLane){
-            currentLane = rightLane;
-        }else if(currentLane == leftLane){
-            currentLane = middleLane;
-        }else{
-            validMove = false;    
-        }
-    }else{
-        if(keyEvent.keyCode === 38){//up, jump
-            // Only allow jumping if close to the ground
-            if(heroSphere.position.y <= heroBaseY + 0.1) {
-                bounceValue = 0.1;
-                jumping = true;
-            }
-        }
-        validMove = false;
-    }
-    
-    if(validMove){
-        // Only add a small bounce for lane changes if close to ground
-        if(heroSphere.position.y <= heroBaseY + 0.1) {
+          }
+
+          if (heroSphere.position.y <= heroBaseY + 0.1) {
             jumping = true;
             bounceValue = 0.06;
-        }
-    }
-}
-function addHero(){
-	var sphereGeometry = new THREE.DodecahedronGeometry( heroRadius, 1);
-	var sphereMaterial = new THREE.MeshStandardMaterial( { color: 0xe5f2f2 ,shading:THREE.FlatShading} )
-	jumping=false;
-	heroSphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
-	heroSphere.receiveShadow = true;
-	heroSphere.castShadow=true;
-	scene.add( heroSphere );
-	heroSphere.position.y=heroBaseY;
-	heroSphere.position.z=4.8;
-	currentLane=middleLane;
-	heroSphere.position.x=currentLane;
-}
-function addWorld() {
-  var sides = 40;
-  var tiers = 40;
-  
-  // Create a sphere with BufferGeometry
-  var sphereGeometry = new THREE.SphereGeometry(worldRadius, sides, tiers);
-  var sphereMaterial = new THREE.MeshStandardMaterial({
-    color: 0xfffafa,
-    flatShading: true // Updated to flatShading
-  });
-  
-  // Access positions in BufferGeometry
-  var positionAttribute = sphereGeometry.attributes.position;
-
-  var vertexIndex;
-  var vertexVector = new THREE.Vector3();
-  var nextVertexVector = new THREE.Vector3();
-  var firstVertexVector = new THREE.Vector3();
-  var offset = new THREE.Vector3();
-  var currentTier = 1;
-  var lerpValue = 0.5;
-  var heightValue;
-  var maxHeight = 0.07;
-
-  for (var j = 1; j < tiers - 2; j++) {
-    currentTier = j;
-    for (var i = 0; i < sides; i++) {
-      // Get the vertex index and vector
-      vertexIndex = (currentTier * sides) + i;
-      vertexVector.fromBufferAttribute(positionAttribute, vertexIndex);
-
-      if (j % 2 !== 0) {
-        if (i === 0) {
-          firstVertexVector.copy(vertexVector);
+          }
         }
 
-        // Get the next vertex
-        nextVertexVector.fromBufferAttribute(positionAttribute, vertexIndex + 1);
+        function moveRight() {
+          if (heroSphere.position.y > heroBaseY + 0.5) return;
 
-        // Handle the last vertex in the loop
-        if (i === sides - 1) {
-          nextVertexVector.copy(firstVertexVector);
+          if (currentLane === middleLane) {
+            currentLane = rightLane;
+          } else if (currentLane === leftLane) {
+            currentLane = middleLane;
+          }
+
+          if (heroSphere.position.y <= heroBaseY + 0.1) {
+            jumping = true;
+            bounceValue = 0.06;
+          }
+        }
+      }
+      function addExplosion() {
+        // Create a BufferGeometry instead of Geometry
+        var particleGeometry = new THREE.BufferGeometry();
+
+        // Create an array to hold the positions of the particles
+        var positions = new Float32Array(particleCount * 3); // 3 components (x, y, z) for each vertex
+
+        for (var i = 0; i < particleCount; i++) {
+          var vertex = new THREE.Vector3(
+            (Math.random() - 0.5) * 2, // Random x position
+            (Math.random() - 0.5) * 2, // Random y position
+            (Math.random() - 0.5) * 2 // Random z position
+          );
+
+          // Assign the vertex positions to the positions array
+          positions[i * 3] = vertex.x; // x
+          positions[i * 3 + 1] = vertex.y; // y
+          positions[i * 3 + 2] = vertex.z; // z
         }
 
-        // Lerp between the current and next vertex
-        lerpValue = (Math.random() * (0.75 - 0.25)) + 0.25;
-        vertexVector.lerp(nextVertexVector, lerpValue);
+        // Set the positions as an attribute in the BufferGeometry
+        particleGeometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3)
+        );
+
+        var pMaterial = new THREE.PointsMaterial({
+          color: 0x00ff00,
+          size: 0.2,
+        });
+
+        // Create Points using the BufferGeometry
+        particles = new THREE.Points(particleGeometry, pMaterial);
+        scene.add(particles);
+        particles.visible = false; // Hide the particles initially
       }
 
-      // Random height variation
-      heightValue = (Math.random() * maxHeight) - (maxHeight / 2);
-      offset.copy(vertexVector).normalize().multiplyScalar(heightValue);
-      vertexVector.add(offset);
+      function createTreesPool() {
+        var maxTreesInPool = 10;
+        var newTree;
+        for (var i = 0; i < maxTreesInPool; i++) {
+          newTree = createTree();
+          treesPool.push(newTree);
+        }
+      }
+      function handleKeyDown(keyEvent) {
+        // Only allow lane changes if not already jumping too high
+        if (heroSphere.position.y > heroBaseY + 0.5) return;
 
-      // Update the position attribute
-      positionAttribute.setXYZ(vertexIndex, vertexVector.x, vertexVector.y, vertexVector.z);
-    }
-  }
+        var validMove = true;
+        if (keyEvent.keyCode === 37) {
+          //left
+          if (currentLane == middleLane) {
+            currentLane = leftLane;
+          } else if (currentLane == rightLane) {
+            currentLane = middleLane;
+          } else {
+            validMove = false;
+          }
+        } else if (keyEvent.keyCode === 39) {
+          //right
+          if (currentLane == middleLane) {
+            currentLane = rightLane;
+          } else if (currentLane == leftLane) {
+            currentLane = middleLane;
+          } else {
+            validMove = false;
+          }
+        } else {
+          if (keyEvent.keyCode === 38) {
+            //up, jump
+            // Only allow jumping if close to the ground
+            if (heroSphere.position.y <= heroBaseY + 0.1) {
+              bounceValue = 0.1;
+              jumping = true;
+            }
+          }
+          validMove = false;
+        }
 
-  // Mark the position attribute as needing an update
-  positionAttribute.needsUpdate = true;
+        if (validMove) {
+          // Only add a small bounce for lane changes if close to ground
+          if (heroSphere.position.y <= heroBaseY + 0.1) {
+            jumping = true;
+            bounceValue = 0.06;
+          }
+        }
+      }
+      function addHero() {
+        // Create a smooth sphere geometry with more segments for better smoothness
+        var sphereGeometry = new THREE.SphereGeometry(heroRadius, 32, 32);
 
-  // Create the rolling ground sphere mesh
-  rollingGroundSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-  rollingGroundSphere.receiveShadow = true;
-  rollingGroundSphere.castShadow = false;
-  rollingGroundSphere.rotation.z = -Math.PI / 2;
+        // Load the MatCap texture
+        const textureLoader = new THREE.TextureLoader();
+        const matcapTexture = textureLoader.load(
+          "3E3D39_D6CEAF_91BAC1_897966.jpg"
+        );
 
-  // Add the sphere to the scene
-  scene.add(rollingGroundSphere);
+        // Create material with MatCap
+        var sphereMaterial = new THREE.MeshMatcapMaterial({
+          matcap: matcapTexture,
+          flatShading: false, // Ensure smooth shading
+        });
 
-  // Position the sphere
-  rollingGroundSphere.position.y = -24;
-  rollingGroundSphere.position.z = 2;
-
-  // Add trees or other objects to the world
-  addWorldTrees();
-}
-
-function addLight(){
-	var hemisphereLight = new THREE.HemisphereLight(0xfffafa,0x000000, .9)
-	scene.add(hemisphereLight);
-	sun = new THREE.DirectionalLight( 0xcdc1c5, 0.9);
-	sun.position.set( 12,6,-7 );
-	sun.castShadow = true;
-	scene.add(sun);
-	//Set up shadow properties for the sun light
-	sun.shadow.mapSize.width = 256;
-	sun.shadow.mapSize.height = 256;
-	sun.shadow.camera.near = 0.5;
-	sun.shadow.camera.far = 50 ;
-}
-function addPathTree(){
-	var options=[0,1,2];
-	var lane= Math.floor(Math.random()*3);
-	addTree(true,lane);
-	options.splice(lane,1);
-	if(Math.random()>0.5){
-		lane= Math.floor(Math.random()*2);
-		addTree(true,options[lane]);
-	}
-}
-function addWorldTrees(){
-	var numTrees=36;
-	var gap=6.28/36;
-	for(var i=0;i<numTrees;i++){
-		addTree(false,i*gap, true);
-		addTree(false,i*gap, false);
-	}
-}
-function addTree(inPath, row, isLeft){
-	var newTree;
-	if(inPath){
-		if(treesPool.length==0)return;
-		newTree=treesPool.pop();
-		newTree.visible=true;
-		//console.log("add tree");
-		treesInPath.push(newTree);
-		sphericalHelper.set(worldRadius - 0.3, pathAngleValues[row], -rollingGroundSphere.rotation.x + 4);
-	}else{
-		newTree=createTree();
-		var forestAreaAngle=0;//[1.52,1.57,1.62];
-		if(isLeft){
-			forestAreaAngle=1.68+Math.random()*0.1;
-		}else{
-			forestAreaAngle=1.46-Math.random()*0.1;
-		}
-		sphericalHelper.set( worldRadius-0.3, forestAreaAngle, row );
-	}
-	newTree.position.setFromSpherical( sphericalHelper );
-	var rollingGroundVector=rollingGroundSphere.position.clone().normalize();
-	var treeVector=newTree.position.clone().normalize();
-	newTree.quaternion.setFromUnitVectors(treeVector,rollingGroundVector);
-	newTree.rotation.x+=(Math.random()*(2*Math.PI/10))+-Math.PI/10;
-	
-	rollingGroundSphere.add(newTree);
-}
-function createTree() {
-  var sides = 8;
-  var tiers = 6;
-  var scalarMultiplier = (Math.random() * (0.25 - 0.1)) + 0.05;
-
-  // Create ConeGeometry (BufferGeometry is now used)
-  var treeGeometry = new THREE.ConeGeometry(0.5, 1, sides, tiers);
-  var treeMaterial = new THREE.MeshStandardMaterial({
-    color: 0x228B22,
-    flatShading: true
-  });
-
-  var positionAttribute = treeGeometry.attributes.position;
-  var vertex = new THREE.Vector3();
-
-  // Apply transformations on the vertices by using positionAttribute
-  for (let i = 0; i < positionAttribute.count; i++) {
-    vertex.fromBufferAttribute(positionAttribute, i);
-
-    // Example of modifying the vertex (similar to blowUpTree or tightenTree functions)
-    if (i % 2 === 0) {
-      vertex.multiplyScalar(scalarMultiplier); // Random adjustment as an example
-    }
-
-    positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); // Set the modified position back
-  }
-
-  // Notify the treeGeometry about changes to vertices
-  treeGeometry.attributes.position.needsUpdate = true;
-
-  // Create the tree's top mesh
-  var treeTop = new THREE.Mesh(treeGeometry, treeMaterial);
-  treeTop.castShadow = true;
-  treeTop.receiveShadow = false;
-  treeTop.position.y = 0.9;
-  treeTop.rotation.y = Math.random() * Math.PI;
-
-  // Create the trunk
-  var treeTrunkGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5);
-  var trunkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x886633,
-    flatShading: true
-  });
-  var treeTrunk = new THREE.Mesh(treeTrunkGeometry, trunkMaterial);
-  treeTrunk.position.y = 0.25;
-
-  // Combine the trunk and top into one Object3D
-  var tree = new THREE.Object3D();
-  tree.add(treeTrunk);
-  tree.add(treeTop);
-
-  return tree;
-}
-
-function blowUpTree(vertices,sides,currentTier,scalarMultiplier,odd){
-	var vertexIndex;
-	var vertexVector= new THREE.Vector3();
-	var midPointVector=vertices[0].clone();
-	var offset;
-	for(var i=0;i<sides;i++){
-		vertexIndex=(currentTier*sides)+1;
-		vertexVector=vertices[i+vertexIndex].clone();
-		midPointVector.y=vertexVector.y;
-		offset=vertexVector.sub(midPointVector);
-		if(odd){
-			if(i%2===0){
-				offset.normalize().multiplyScalar(scalarMultiplier/6);
-				vertices[i+vertexIndex].add(offset);
-			}else{
-				offset.normalize().multiplyScalar(scalarMultiplier);
-				vertices[i+vertexIndex].add(offset);
-				vertices[i+vertexIndex].y=vertices[i+vertexIndex+sides].y+0.05;
-			}
-		}else{
-			if(i%2!==0){
-				offset.normalize().multiplyScalar(scalarMultiplier/6);
-				vertices[i+vertexIndex].add(offset);
-			}else{
-				offset.normalize().multiplyScalar(scalarMultiplier);
-				vertices[i+vertexIndex].add(offset);
-				vertices[i+vertexIndex].y=vertices[i+vertexIndex+sides].y+0.05;
-			}
-		}
-	}
-}
-function tightenTree(vertices,sides,currentTier){
-	var vertexIndex;
-	var vertexVector= new THREE.Vector3();
-	var midPointVector=vertices[0].clone();
-	var offset;
-	for(var i=0;i<sides;i++){
-		vertexIndex=(currentTier*sides)+1;
-		vertexVector=vertices[i+vertexIndex].clone();
-		midPointVector.y=vertexVector.y;
-		offset=vertexVector.sub(midPointVector);
-		offset.normalize().multiplyScalar(0.06);
-		vertices[i+vertexIndex].sub(offset);
-	}
-}
-
-// Update the update function
-function update(){
-    //stats.update();
-    //animate
-    rollingGroundSphere.rotation.x += rollingSpeed;
-    heroSphere.rotation.x -= heroRollingSpeed;
-    
-    // Add maximum height limit
-    if(heroSphere.position.y > heroBaseY + 2) {
-        heroSphere.position.y = heroBaseY + 2;
-        bounceValue = 0;
-    }
-    
-    if(heroSphere.position.y <= heroBaseY){
-        heroSphere.position.y = heroBaseY;
         jumping = false;
-        bounceValue = (Math.random() * 0.04) + 0.005;
-    }
-    
-    heroSphere.position.y += bounceValue;
-    heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 2 * clock.getDelta());
-    bounceValue -= gravity;
-    
-    if(clock.getElapsedTime() > treeReleaseInterval){
-        clock.start();
-        addPathTree();
-        if(!hasCollided){
-            score += 2 * treeReleaseInterval;
-            scoreText.innerHTML = score.toString();
+        heroSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+        // Setup shadow properties
+        heroSphere.receiveShadow = true;
+        heroSphere.castShadow = true;
+
+        // Add to scene and position
+        scene.add(heroSphere);
+        heroSphere.position.y = heroBaseY;
+        heroSphere.position.z = 4.8;
+        currentLane = middleLane;
+        heroSphere.position.x = currentLane;
+      }
+      function addWorld() {
+    var sides = 50;
+    var tiers = 50;
+    var sphereGeometry = new THREE.SphereGeometry(
+        worldRadius,
+        sides,
+        tiers
+    );
+    var sphereMaterial = new THREE.MeshStandardMaterial({
+        color: 0xe6e6fa,
+        flatShading: true,
+        metalness: 0,
+        roughness: 0.8,
+    });
+
+    // [Previous vertex manipulation code remains the same...]
+    var positionAttribute = sphereGeometry.attributes.position;
+
+    var vertexIndex;
+    var vertexVector = new THREE.Vector3();
+    var nextVertexVector = new THREE.Vector3();
+    var firstVertexVector = new THREE.Vector3();
+    var offset = new THREE.Vector3();
+    var currentTier = 1;
+    var lerpValue = 0.5;
+    var heightValue;
+    var maxHeight = 0.07;
+
+    for (var j = 1; j < tiers - 2; j++) {
+        currentTier = j;
+        for (var i = 0; i < sides; i++) {
+            vertexIndex = currentTier * sides + i;
+            vertexVector.fromBufferAttribute(positionAttribute, vertexIndex);
+
+            if (j % 2 !== 0) {
+                if (i === 0) {
+                    firstVertexVector.copy(vertexVector);
+                }
+                nextVertexVector.fromBufferAttribute(
+                    positionAttribute,
+                    vertexIndex + 1
+                );
+                if (i === sides - 1) {
+                    nextVertexVector.copy(firstVertexVector);
+                }
+                lerpValue = Math.random() * (0.75 - 0.25) + 0.25;
+                vertexVector.lerp(nextVertexVector, lerpValue);
+            }
+
+            heightValue = Math.random() * maxHeight - maxHeight / 2;
+            offset.copy(vertexVector).normalize().multiplyScalar(heightValue);
+            vertexVector.add(offset);
+
+            positionAttribute.setXYZ(
+                vertexIndex,
+                vertexVector.x,
+                vertexVector.y,
+                vertexVector.z
+            );
         }
     }
-    doTreeLogic();
-    doExplosionLogic();
-    render();
-    requestAnimationFrame(update);
-}
-function doTreeLogic(){
-	var oneTree;
-	var treePos = new THREE.Vector3();
-	var treesToRemove=[];
-	treesInPath.forEach( function ( element, index ) {
-		oneTree=treesInPath[ index ];
-		treePos.setFromMatrixPosition( oneTree.matrixWorld );
-		if(treePos.z>6 &&oneTree.visible){//gone out of our view zone
-			treesToRemove.push(oneTree);
-		}else{//check collision
-			if(treePos.distanceTo(heroSphere.position) <= 0.6){
-				console.log("hit");
-				hasCollided=true;
-				explode();
-			}
-		}
-	});
-	var fromWhere;
-	treesToRemove.forEach( function ( element, index ) {
-		oneTree=treesToRemove[ index ];
-		fromWhere=treesInPath.indexOf(oneTree);
-		treesInPath.splice(fromWhere,1);
-		treesPool.push(oneTree);
-		oneTree.visible=false;
-		console.log("remove tree");
-	});
-}
-function doExplosionLogic() {
-    if (!particles.visible) return;
 
-    // Access the position attribute of the particle geometry
-    const positions = particles.geometry.attributes.position.array;
+    positionAttribute.needsUpdate = true;
 
-    for (var i = 0; i < particleCount; i++) {
-        // Multiply each vertex position by the explosion power
-        positions[i * 3] *= explosionPower;      // x
-        positions[i * 3 + 1] *= explosionPower;  // y
-        positions[i * 3 + 2] *= explosionPower;  // z
-    }
+    rollingGroundSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+    rollingGroundSphere.receiveShadow = true;
+    rollingGroundSphere.castShadow = false;
+    rollingGroundSphere.rotation.z = -Math.PI / 2;
 
-    if (explosionPower > 1.005) {
-        explosionPower -= 0.001;
-    } else {
-        particles.visible = false; // Hide particles after the explosion
-    }
+    scene.add(rollingGroundSphere);
+    rollingGroundSphere.position.y = -24;
+    rollingGroundSphere.position.z = 2;
 
-    // Indicate that the position attribute needs to be updated
-    particles.geometry.attributes.position.needsUpdate = true;
-}
+    // Add text
+const fontLoader = new THREE.FontLoader();
+fontLoader.load('fonts/helvetiker_bold.typeface.json', function(font) {
+    const textGeometry = new THREE.TextGeometry('B&B', {
+        font: font,
+        size: 25,
+        height: 1,
+        curveSegments: 12,
+        bevelEnabled: true,
+        bevelThickness: 0.2,
+        bevelSize: 0.1,
+        bevelOffset: 0,
+        bevelSegments: 5
+    });
 
-function explode() {
-    // Set the initial position of the particles
-    particles.position.y = 2;
-    particles.position.z = 4.8;
-    particles.position.x = heroSphere.position.x;
+    // Create material for text with emissive properties
+    const textMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x00ff00,      // Bright red
+        emissive: 0x00ffff,   // Red emissive color
+        emissiveIntensity: 0.5, // Intensity of emission
+        metalness: 0.7,
+        roughness: 0.2,
+        envMapIntensity: 1.5,  // Increase reflection intensity
+        fog: false
+    });
 
-    // Create an array to hold the new positions of the particles
-    const positions = new Float32Array(particleCount * 3); // 3 components (x, y, z) for each vertex
-
-    for (var i = 0; i < particleCount; i++) {
-        // Generate random positions for the particles
-        positions[i * 3] = -0.2 + Math.random() * 0.4;      // x
-        positions[i * 3 + 1] = -0.2 + Math.random() * 0.4;  // y
-        positions[i * 3 + 2] = -0.2 + Math.random() * 0.4;  // z
-    }
-
-    // Update the positions attribute of the particle geometry
-    particles.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
     
-    explosionPower = 1.07;
-    particles.visible = true; // Make particles visible
+    // Center the text
+    textGeometry.computeBoundingBox();
+    const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+    textMesh.position.x = -textWidth / 2;
+    textMesh.position.y = -10;
+    textMesh.position.z = -75;
+    
+    // Rotate text to face camera
+    textMesh.rotation.x = -Math.PI / 6;
+    
+    // Add shadows
+    textMesh.castShadow = true;
+    textMesh.receiveShadow = true;
+
+    // Optional: Add a point light near the text to enhance visibility
+    const textLight = new THREE.PointLight(0xffffff, 1, 100);
+    textLight.position.set(0, -5, -70);  // Position light near text
+    scene.add(textLight);
+    
+    scene.add(textMesh);
+});
+
+    addWorldTrees();
 }
 
-function render(){
-    renderer.render(scene, camera);//draw
-}
-function gameOver () {
-  //cancelAnimationFrame( globalRenderID );
-  //window.clearInterval( powerupSpawnIntervalID );
-}
-function onWindowResize() {
-	//resize & align
-	sceneHeight = window.innerHeight;
-	sceneWidth = window.innerWidth;
-	renderer.setSize(sceneWidth, sceneHeight);
-	camera.aspect = sceneWidth/sceneHeight;
-	camera.updateProjectionMatrix();
-}
+      function addLight() {
+        var hemisphereLight = new THREE.HemisphereLight(
+          0xfffafa,
+          0x000000,
+          0.9
+        );
+        scene.add(hemisphereLight);
+        sun = new THREE.DirectionalLight(0xcdc1c5, 0.9);
+        sun.position.set(12, 6, -7);
+        sun.castShadow = true;
+        scene.add(sun);
+        //Set up shadow properties for the sun light
+        sun.shadow.mapSize.width = 256;
+        sun.shadow.mapSize.height = 256;
+        sun.shadow.camera.near = 0.5;
+        sun.shadow.camera.far = 50;
+      }
+      function addPathTree() {
+        var options = [0, 1, 2];
+        var lane = Math.floor(Math.random() * 3);
+        addTree(true, lane);
+        options.splice(lane, 1);
+        if (Math.random() > 0.5) {
+          lane = Math.floor(Math.random() * 2);
+          addTree(true, options[lane]);
+        }
+      }
+      function addWorldTrees() {
+        var numTrees = 36;
+        var gap = 6.28 / 36;
+        for (var i = 0; i < numTrees; i++) {
+          addTree(false, i * gap, true);
+          addTree(false, i * gap, false);
+        }
+      }
+      function addTree(inPath, row, isLeft) {
+        var newTree;
+        if (inPath) {
+          if (treesPool.length == 0) return;
+          newTree = treesPool.pop();
+          newTree.visible = true;
+          //console.log("add tree");
+          treesInPath.push(newTree);
+          sphericalHelper.set(
+            worldRadius - 0.3,
+            pathAngleValues[row],
+            -rollingGroundSphere.rotation.x + 4
+          );
+        } else {
+          newTree = createTree();
+          var forestAreaAngle = 0; //[1.52,1.57,1.62];
+          if (isLeft) {
+            forestAreaAngle = 1.68 + Math.random() * 0.1;
+          } else {
+            forestAreaAngle = 1.46 - Math.random() * 0.1;
+          }
+          sphericalHelper.set(worldRadius - 0.3, forestAreaAngle, row);
+        }
+        newTree.position.setFromSpherical(sphericalHelper);
+        var rollingGroundVector = rollingGroundSphere.position
+          .clone()
+          .normalize();
+        var treeVector = newTree.position.clone().normalize();
+        newTree.quaternion.setFromUnitVectors(treeVector, rollingGroundVector);
+        newTree.rotation.x +=
+          Math.random() * ((2 * Math.PI) / 10) + -Math.PI / 10;
+
+        rollingGroundSphere.add(newTree);
+      }
+      function createTree() {
+        var sides = 12; // Increased for smoother appearance
+        var tiers = 8;
+        var scalarMultiplier = Math.random() * (0.25 - 0.1) + 0.05;
+        var treeGeometry = new THREE.ConeGeometry(0.5, 1, sides, tiers);
+        var treeMaterial = new THREE.MeshStandardMaterial({
+          color: 0x228b22,
+          flatShading: true,
+          metalness: 0.1,
+          roughness: 0.8,
+        });
+
+        var positionAttribute = treeGeometry.attributes.position;
+        var vertex = new THREE.Vector3();
+
+        // Apply transformations on the vertices by using positionAttribute
+        for (let i = 0; i < positionAttribute.count; i++) {
+          vertex.fromBufferAttribute(positionAttribute, i);
+
+          // Example of modifying the vertex (similar to blowUpTree or tightenTree functions)
+          if (i % 2 === 0) {
+            vertex.multiplyScalar(scalarMultiplier); // Random adjustment as an example
+          }
+
+          positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); // Set the modified position back
+        }
+
+        // Notify the treeGeometry about changes to vertices
+        treeGeometry.attributes.position.needsUpdate = true;
+
+        // Create the tree's top mesh
+        var treeTop = new THREE.Mesh(treeGeometry, treeMaterial);
+        treeTop.castShadow = true;
+        treeTop.receiveShadow = false;
+        treeTop.position.y = 0.9;
+        treeTop.rotation.y = Math.random() * Math.PI;
+
+        // Create the trunk
+        var treeTrunkGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5);
+        var trunkMaterial = new THREE.MeshStandardMaterial({
+          color: 0x886633,
+          flatShading: true,
+        });
+        var treeTrunk = new THREE.Mesh(treeTrunkGeometry, trunkMaterial);
+        treeTrunk.position.y = 0.25;
+
+        // Combine the trunk and top into one Object3D
+        var tree = new THREE.Object3D();
+        tree.add(treeTrunk);
+        tree.add(treeTop);
+
+        return tree;
+      }
+
+      function blowUpTree(vertices, sides, currentTier, scalarMultiplier, odd) {
+        var vertexIndex;
+        var vertexVector = new THREE.Vector3();
+        var midPointVector = vertices[0].clone();
+        var offset;
+        for (var i = 0; i < sides; i++) {
+          vertexIndex = currentTier * sides + 1;
+          vertexVector = vertices[i + vertexIndex].clone();
+          midPointVector.y = vertexVector.y;
+          offset = vertexVector.sub(midPointVector);
+          if (odd) {
+            if (i % 2 === 0) {
+              offset.normalize().multiplyScalar(scalarMultiplier / 6);
+              vertices[i + vertexIndex].add(offset);
+            } else {
+              offset.normalize().multiplyScalar(scalarMultiplier);
+              vertices[i + vertexIndex].add(offset);
+              vertices[i + vertexIndex].y =
+                vertices[i + vertexIndex + sides].y + 0.05;
+            }
+          } else {
+            if (i % 2 !== 0) {
+              offset.normalize().multiplyScalar(scalarMultiplier / 6);
+              vertices[i + vertexIndex].add(offset);
+            } else {
+              offset.normalize().multiplyScalar(scalarMultiplier);
+              vertices[i + vertexIndex].add(offset);
+              vertices[i + vertexIndex].y =
+                vertices[i + vertexIndex + sides].y + 0.05;
+            }
+          }
+        }
+      }
+      function tightenTree(vertices, sides, currentTier) {
+        var vertexIndex;
+        var vertexVector = new THREE.Vector3();
+        var midPointVector = vertices[0].clone();
+        var offset;
+        for (var i = 0; i < sides; i++) {
+          vertexIndex = currentTier * sides + 1;
+          vertexVector = vertices[i + vertexIndex].clone();
+          midPointVector.y = vertexVector.y;
+          offset = vertexVector.sub(midPointVector);
+          offset.normalize().multiplyScalar(0.06);
+          vertices[i + vertexIndex].sub(offset);
+        }
+      }
+
+      // Update the update function
+      function update() {
+        if (hasCollided) {
+          gameOver();
+          return;
+        }
+
+        // [Rest of the update function remains the same]
+        rollingGroundSphere.rotation.x += rollingSpeed;
+        heroSphere.rotation.x -= heroRollingSpeed;
+
+        if (heroSphere.position.y > heroBaseY + 2) {
+          heroSphere.position.y = heroBaseY + 2;
+          bounceValue = 0;
+        }
+
+        if (heroSphere.position.y <= heroBaseY) {
+          heroSphere.position.y = heroBaseY;
+          jumping = false;
+          bounceValue = Math.random() * 0.04 + 0.005;
+        }
+
+        heroSphere.position.y += bounceValue;
+        heroSphere.position.x = THREE.MathUtils.lerp(
+          heroSphere.position.x,
+          currentLane,
+          2 * clock.getDelta()
+        );
+        bounceValue -= gravity;
+
+        if (clock.getElapsedTime() > treeReleaseInterval) {
+          clock.start();
+          addPathTree();
+          if (!hasCollided) {
+            score += 2 * treeReleaseInterval;
+            document.getElementById("scoreText").innerHTML =
+              Math.floor(score).toString();
+          }
+        }
+
+        doTreeLogic();
+        doExplosionLogic();
+        render();
+        requestAnimationFrame(update);
+      }
+      function doTreeLogic() {
+        var oneTree;
+        var treePos = new THREE.Vector3();
+        var treesToRemove = [];
+        treesInPath.forEach(function (element, index) {
+          oneTree = treesInPath[index];
+          treePos.setFromMatrixPosition(oneTree.matrixWorld);
+          if (treePos.z > 6 && oneTree.visible) {
+            //gone out of our view zone
+            treesToRemove.push(oneTree);
+          } else {
+            //check collision
+            if (treePos.distanceTo(heroSphere.position) <= 0.6) {
+              console.log("hit");
+              hasCollided = true;
+              explode();
+            }
+          }
+        });
+        var fromWhere;
+        treesToRemove.forEach(function (element, index) {
+          oneTree = treesToRemove[index];
+          fromWhere = treesInPath.indexOf(oneTree);
+          treesInPath.splice(fromWhere, 1);
+          treesPool.push(oneTree);
+          oneTree.visible = false;
+          console.log("remove tree");
+        });
+      }
+      function doExplosionLogic() {
+        if (!particles.visible) return;
+
+        // Access the position attribute of the particle geometry
+        const positions = particles.geometry.attributes.position.array;
+
+        for (var i = 0; i < particleCount; i++) {
+          // Multiply each vertex position by the explosion power
+          positions[i * 3] *= explosionPower; // x
+          positions[i * 3 + 1] *= explosionPower; // y
+          positions[i * 3 + 2] *= explosionPower; // z
+        }
+
+        if (explosionPower > 1.005) {
+          explosionPower -= 0.001;
+        } else {
+          particles.visible = false; // Hide particles after the explosion
+        }
+
+        // Indicate that the position attribute needs to be updated
+        particles.geometry.attributes.position.needsUpdate = true;
+      }
+
+      function explode() {
+        // Set the initial position of the particles
+        particles.position.y = 2;
+        particles.position.z = 4.8;
+        particles.position.x = heroSphere.position.x;
+
+        // Create an array to hold the new positions of the particles
+        const positions = new Float32Array(particleCount * 3); // 3 components (x, y, z) for each vertex
+
+        for (var i = 0; i < particleCount; i++) {
+          // Generate random positions for the particles
+          positions[i * 3] = -0.2 + Math.random() * 0.4; // x
+          positions[i * 3 + 1] = -0.2 + Math.random() * 0.4; // y
+          positions[i * 3 + 2] = -0.2 + Math.random() * 0.4; // z
+        }
+
+        // Update the positions attribute of the particle geometry
+        particles.geometry.setAttribute(
+          "position",
+          new THREE.BufferAttribute(positions, 3)
+        );
+
+        explosionPower = 1.07;
+        particles.visible = true; // Make particles visible
+      }
+
+      function render() {
+        renderer.render(scene, camera); //draw
+      }
+      // function gameOver () {
+      // }
+      function gameOver() {
+        cancelAnimationFrame(globalRenderID);
+        // window.clearInterval( powerupSpawnIntervalID );
+        const finalScore = Math.floor(score);
+        document.getElementById("finalScore").innerHTML = finalScore;
+
+        const achievementText = document.getElementById("achievementText");
+        if (finalScore >= 100) {
+          achievementText.innerHTML =
+            "Congratulations! You've earned a 10% discount! [USE B&BVIBE FOR 10% DISCOUNT]";
+        } else {
+          achievementText.innerHTML =
+            "Keep trying! Score 100+ for a special discount.";
+        }
+
+        gameOverModal.style.display = "flex";
+      }
+      function onWindowResize() {
+        //resize & align
+        sceneHeight = window.innerHeight;
+        sceneWidth = window.innerWidth;
+        renderer.setSize(sceneWidth, sceneHeight);
+        camera.aspect = sceneWidth / sceneHeight;
+        camera.updateProjectionMatrix();
+      }
+      createModals();
     </script>
-</body>
+  </body>
 </html>
