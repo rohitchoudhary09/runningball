@@ -153,25 +153,36 @@ function createScene(){
             }
 	document.onkeydown = handleKeyDown;
 
-	function moveLeft() {
-            if (currentLane === middleLane) {
-                currentLane = leftLane;
-            } else if (currentLane === rightLane) {
-                currentLane = middleLane;
-            }
-            jumping = true;
-            bounceValue = 0.06;
-        }
+// Update the movement functions for touch controls
+function moveLeft() {
+    if(heroSphere.position.y > heroBaseY + 0.5) return;
+    
+    if(currentLane === middleLane) {
+        currentLane = leftLane;
+    } else if(currentLane === rightLane) {
+        currentLane = middleLane;
+    }
+    
+    if(heroSphere.position.y <= heroBaseY + 0.1) {
+        jumping = true;
+        bounceValue = 0.06;
+    }
+}
 
-        function moveRight() {
-            if (currentLane === middleLane) {
-                currentLane = rightLane;
-            } else if (currentLane === leftLane) {
-                currentLane = middleLane;
-            }
-            jumping = true;
-            bounceValue = 0.06;
-        }
+function moveRight() {
+    if(heroSphere.position.y > heroBaseY + 0.5) return;
+    
+    if(currentLane === middleLane) {
+        currentLane = rightLane;
+    } else if(currentLane === leftLane) {
+        currentLane = middleLane;
+    }
+    
+    if(heroSphere.position.y <= heroBaseY + 0.1) {
+        jumping = true;
+        bounceValue = 0.06;
+    }
+}
 	
 	scoreText = document.createElement('div');
 	scoreText.style.position = 'absolute';
@@ -237,36 +248,44 @@ function createTreesPool(){
 	}
 }
 function handleKeyDown(keyEvent){
-	if(jumping)return;
-	var validMove=true;
-	if ( keyEvent.keyCode === 37) {//left
-		if(currentLane==middleLane){
-			currentLane=leftLane;
-		}else if(currentLane==rightLane){
-			currentLane=middleLane;
-		}else{
-			validMove=false;	
-		}
-	} else if ( keyEvent.keyCode === 39) {//right
-		if(currentLane==middleLane){
-			currentLane=rightLane;
-		}else if(currentLane==leftLane){
-			currentLane=middleLane;
-		}else{
-			validMove=false;	
-		}
-	}else{
-		if ( keyEvent.keyCode === 38){//up, jump
-			bounceValue=0.1;
-			jumping=true;
-		}
-		validMove=false;
-	}
-	//heroSphere.position.x=currentLane;
-	if(validMove){
-		jumping=true;
-		bounceValue=0.06;
-	}
+    // Only allow lane changes if not already jumping too high
+    if(heroSphere.position.y > heroBaseY + 0.5) return;
+    
+    var validMove = true;
+    if(keyEvent.keyCode === 37) {//left
+        if(currentLane == middleLane){
+            currentLane = leftLane;
+        }else if(currentLane == rightLane){
+            currentLane = middleLane;
+        }else{
+            validMove = false;    
+        }
+    } else if(keyEvent.keyCode === 39) {//right
+        if(currentLane == middleLane){
+            currentLane = rightLane;
+        }else if(currentLane == leftLane){
+            currentLane = middleLane;
+        }else{
+            validMove = false;    
+        }
+    }else{
+        if(keyEvent.keyCode === 38){//up, jump
+            // Only allow jumping if close to the ground
+            if(heroSphere.position.y <= heroBaseY + 0.1) {
+                bounceValue = 0.1;
+                jumping = true;
+            }
+        }
+        validMove = false;
+    }
+    
+    if(validMove){
+        // Only add a small bounce for lane changes if close to ground
+        if(heroSphere.position.y <= heroBaseY + 0.1) {
+            jumping = true;
+            bounceValue = 0.06;
+        }
+    }
 }
 function addHero(){
 	var sphereGeometry = new THREE.DodecahedronGeometry( heroRadius, 1);
@@ -518,30 +537,41 @@ function tightenTree(vertices,sides,currentTier){
 	}
 }
 
+// Update the update function
 function update(){
-	//stats.update();
+    //stats.update();
     //animate
     rollingGroundSphere.rotation.x += rollingSpeed;
     heroSphere.rotation.x -= heroRollingSpeed;
-    if(heroSphere.position.y<=heroBaseY){
-    	jumping=false;
-    	bounceValue=(Math.random()*0.04)+0.005;
+    
+    // Add maximum height limit
+    if(heroSphere.position.y > heroBaseY + 2) {
+        heroSphere.position.y = heroBaseY + 2;
+        bounceValue = 0;
     }
-    heroSphere.position.y+=bounceValue;
-    heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 2 * clock.getDelta());//clock.getElapsedTime());
-    bounceValue-=gravity;
-    if(clock.getElapsedTime()>treeReleaseInterval){
-    	clock.start();
-    	addPathTree();
-    	if(!hasCollided){
-			score+=2*treeReleaseInterval;
-			scoreText.innerHTML=score.toString();
-		}
+    
+    if(heroSphere.position.y <= heroBaseY){
+        heroSphere.position.y = heroBaseY;
+        jumping = false;
+        bounceValue = (Math.random() * 0.04) + 0.005;
+    }
+    
+    heroSphere.position.y += bounceValue;
+    heroSphere.position.x = THREE.MathUtils.lerp(heroSphere.position.x, currentLane, 2 * clock.getDelta());
+    bounceValue -= gravity;
+    
+    if(clock.getElapsedTime() > treeReleaseInterval){
+        clock.start();
+        addPathTree();
+        if(!hasCollided){
+            score += 2 * treeReleaseInterval;
+            scoreText.innerHTML = score.toString();
+        }
     }
     doTreeLogic();
     doExplosionLogic();
     render();
-	requestAnimationFrame(update);//request next update
+    requestAnimationFrame(update);
 }
 function doTreeLogic(){
 	var oneTree;
